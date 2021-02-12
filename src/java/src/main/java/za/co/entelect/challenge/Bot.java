@@ -33,9 +33,11 @@ public class Bot {
 
         Worm enemyWorm = getFirstWormInRange();
         if (enemyWorm != null) {
-            // Direction direction = resolveDirection(currentWorm.position, enemyWorm.position);
-            // return new ShootCommand(direction);
-            return new SnowballCommand(enemyWorm.position.x, enemyWorm.position.y);
+            if (canSnowball()) return new SnowballCommand(enemyWorm.position.x, enemyWorm.position.y);
+            else {
+                Direction direction = resolveDirection(currentWorm.position, enemyWorm.position);
+                return new ShootCommand(direction);
+            }
         }
 
         List<Cell> surroundingBlocks = getSurroundingCells(currentWorm.position.x, currentWorm.position.y);
@@ -141,5 +143,10 @@ public class Bot {
         }
 
         return Direction.valueOf(builder.toString());
+    }
+
+    private boolean canSnowball() {
+        return (currentWorm.id == 3) && (currentWorm.snowballs.count > 0);
+        // masih liat bisa snowball atau sisa ngganya belom distance
     }
 }
