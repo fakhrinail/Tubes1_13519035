@@ -8,4 +8,7 @@ public class MyWorm extends Worm {
 
     @SerializedName("snowballs")
     public Snowballs snowballs;
+
+    @SerializedName("bananaBombs")
+    public BananaBombs bananaBombs;
 }

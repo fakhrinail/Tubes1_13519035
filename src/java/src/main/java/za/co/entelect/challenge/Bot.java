@@ -34,21 +34,52 @@ public class Bot {
         Worm enemyWorm = getFirstWormInRange();
         if (enemyWorm != null) {
             if (canSnowball()) return new SnowballCommand(enemyWorm.position.x, enemyWorm.position.y);
+            else if (canBananaBombs()) return new BananaBombCommand(enemyWorm.position.x, enemyWorm.position.y);
             else {
                 Direction direction = resolveDirection(currentWorm.position, enemyWorm.position);
                 return new ShootCommand(direction);
             }
         }
 
-        List<Cell> surroundingBlocks = getSurroundingCells(currentWorm.position.x, currentWorm.position.y);
-        int cellIdx = random.nextInt(surroundingBlocks.size());
+        Worm nearestWorm = getNearestWorm();
+        int moveX, moveY;
 
-        Cell block = surroundingBlocks.get(cellIdx);
-        if (block.type == CellType.AIR) {
-            return new MoveCommand(block.x, block.y);
-        } else if (block.type == CellType.DIRT) {
-            return new DigCommand(block.x, block.y);
+        if (nearestWorm.position.x-currentWorm.position.x > 0) {
+            moveX = currentWorm.position.x+1;
+        } else if (nearestWorm.position.x-currentWorm.position.x < 0) {
+            moveX = currentWorm.position.x-1;
+        } else moveX = currentWorm.position.x;
+
+        if (nearestWorm.position.y-currentWorm.position.y > 0) {
+            moveY = currentWorm.position.y+1;
+        } else if (nearestWorm.position.y-currentWorm.position.y < 0) {
+            moveY = currentWorm.position.y-1;
+        } else moveY = currentWorm.position.y;
+
+        List<Cell> surroundingBlocks = getSurroundingCells(currentWorm.position.x, currentWorm.position.y);
+        // Cell chosenCell = null;
+        for (Cell cell : surroundingBlocks) {
+            if (cell.x == moveX && cell.y == moveY) {
+                // chosenCell = cell;
+                if (cell.type == CellType.DIRT) {
+                    return new DigCommand(moveX, moveY);
+                } else if (cell.type == CellType.AIR || cell.type == CellType.LAVA) {
+                    return new MoveCommand(moveX, moveY);
+                }
+                break;
+            }
         }
+        
+
+        // List<Cell> surroundingBlocks = getSurroundingCells(currentWorm.position.x, currentWorm.position.y);
+        // int cellIdx = random.nextInt(surroundingBlocks.size());
+
+        // Cell block = surroundingBlocks.get(cellIdx);
+        // if (block.type == CellType.AIR) {
+        //     return new MoveCommand(block.x, block.y);
+        // } else if (block.type == CellType.DIRT) {
+        //     return new DigCommand(block.x, block.y);
+        // }
 
         return new DoNothingCommand();
     }
@@ -63,7 +94,7 @@ public class Bot {
 
         for (Worm enemyWorm : opponent.worms) {
             String enemyPosition = String.format("%d_%d", enemyWorm.position.x, enemyWorm.position.y);
-            if (cells.contains(enemyPosition)) {
+            if (cells.contains(enemyPosition) && enemyWorm.health > 0) {
                 return enemyWorm;
             }
         }
@@ -148,5 +179,26 @@ public class Bot {
     private boolean canSnowball() {
         return (currentWorm.id == 3) && (currentWorm.snowballs.count > 0);
         // masih liat bisa snowball atau sisa ngganya belom distance
+    }
+
+    private boolean canBananaBombs() {
+        return (currentWorm.id == 2) && (currentWorm.bananaBombs.count > 0);
+        // masih liat bisa snowball atau sisa ngganya belom distance
+    }
+
+    private Worm getNearestWorm() {
+        Worm nearestWorm = null;
+        int nearestDistance, tempDistance;
+        nearestDistance = 999999;
+
+        for (Worm enemyWorm : opponent.worms) {
+            tempDistance = euclideanDistance(enemyWorm.position.x, enemyWorm.position.y, currentWorm.position.x, currentWorm.position.y);
+            if (tempDistance < nearestDistance && enemyWorm.health > 0) {
+                nearestDistance = tempDistance;
+                nearestWorm = enemyWorm;
+            }
+        }
+
+        return nearestWorm;
     }
 }
