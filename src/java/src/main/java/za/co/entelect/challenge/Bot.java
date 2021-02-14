@@ -29,15 +29,32 @@ public class Bot {
                 .get();
     }
 
-    public Command run() {
+    public void reassignWormIdToNonFrozen() {
+        for (MyWorm worm : gameState.myPlayer.worms) {
+            if (worm.id == this.availableWormId()) {
+                this.currentWorm = worm;
+            }
+        }
+    }
 
+    public Command run() {
+        String bismillah ="";
+        if (isFrozen(currentWorm)) {
+            Worm tempWorm = currentWorm;
+            reassignWormIdToNonFrozen();
+            if (tempWorm.id != currentWorm.id) {
+                bismillah = String.format("select %d;", currentWorm.id);
+            }
+        }
         Worm enemyWorm = getFirstWormInRange();
         if (enemyWorm != null) { 
             if (canSnowball(enemyWorm)) return new SnowballCommand(enemyWorm.position.x, enemyWorm.position.y);
-            else if (canBananaBombs()) return new BananaBombCommand(enemyWorm.position.x, enemyWorm.position.y);
+            else if (canBananaBombs()) {
+                return new BananaBombCommand(enemyWorm.position.x, enemyWorm.position.y, bismillah);
+            } 
             else {
                 Direction direction = resolveDirection(currentWorm.position, enemyWorm.position);
-                return new ShootCommand(direction);
+                return new ShootCommand(direction,bismillah);
             }
         }
         
@@ -202,5 +219,20 @@ public class Bot {
         }
 
         return nearestWorm;
+    }
+    
+    private boolean isFrozen(Worm worm) {
+        return(worm.roundsUntilUnfrozen != 0);
+    }
+    
+    private int availableWormId() {
+        int i;
+        for(i=0;i<=2;i++) {
+            if(!(isFrozen(gameState.myPlayer.worms[(currentWorm.id+i-1) % 3]))) {
+                
+                return ((currentWorm.id + i) % 3);
+            }
+        }
+        return currentWorm.id;
     }
 }
