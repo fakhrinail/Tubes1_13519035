@@ -110,7 +110,16 @@ public class Bot {
                 }
 
                 Cell cell = gameState.map[coordinateY][coordinateX];
-                if (cell.type != CellType.AIR) {
+                // if (cell.type != CellType.AIR) {
+                //     break;
+                // }
+                if (currentWorm.id == 2 && currentWorm.bananaBombs.count == 0 && cell.type == CellType.DIRT) {
+                    break;
+                }
+                else if (currentWorm.id == 3 && currentWorm.snowballs.count == 0 && cell.type == CellType.DIRT) {
+                    break;
+                }
+                else if (currentWorm.id == 1 && cell.type == CellType.DIRT) {
                     break;
                 }
                 // if(currentWorm.id == 2 && currentWorm.bananaBombs.count == 0) break;
