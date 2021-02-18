@@ -30,56 +30,44 @@ public class Bot {
     }
 
     public Command run() {
-
-        Worm enemyWorm = getFirstWormInRange();
-        if (enemyWorm != null) { 
-            if (canSnowball(enemyWorm)) return new SnowballCommand(enemyWorm.position.x, enemyWorm.position.y);
-            else if (canBananaBombs()) return new BananaBombCommand(enemyWorm.position.x, enemyWorm.position.y);
-            else {
-                Direction direction = resolveDirection(currentWorm.position, enemyWorm.position);
-                return new ShootCommand(direction);
-            }
-        }
-        
+        Worm inRangeWorm = getFirstWormInRange();
         Worm nearestWorm = getNearestWorm();
-        int moveX = currentWorm.position.x;
-        int moveY = currentWorm.position.y;
-        int enemySubCurrX = nearestWorm.position.x-currentWorm.position.x;
-        int enemySubCurrY = nearestWorm.position.y-currentWorm.position.y;
+        Cell nearestPowerUp = getNearestPowerUp();
 
-        if (enemySubCurrX > 0) moveX = currentWorm.position.x+1;
-        else if (enemySubCurrX < 0) moveX = currentWorm.position.x-1;
-        else if (enemySubCurrX == 0) moveX = currentWorm.position.x;
-
-        if (enemySubCurrY > 0) moveY = currentWorm.position.y+1;
-        else if (enemySubCurrY < 0) moveY = currentWorm.position.y-1;
-        else if (enemySubCurrY == 0) moveY = currentWorm.position.y;
-
-        List<Cell> surroundingBlocks = getSurroundingCells(currentWorm.position.x, currentWorm.position.y);
-        // Cell chosenCell = null;
-        for (Cell cell : surroundingBlocks) {
-            if (cell.x == moveX && cell.y == moveY) {
-                // chosenCell = cell;
-                if (cell.type == CellType.DIRT) {
-                    return new DigCommand(moveX, moveY);
-                } else if (cell.type == CellType.AIR || cell.type == CellType.LAVA) {
-                    return new MoveCommand(moveX, moveY);
-                }
-                break;
-            }
-        }
-        
-        return new DoNothingCommand();
+        if (inRangeWorm != null) return attackNearest(inRangeWorm);
+        else return moveNearestEntity(nearestWorm, nearestPowerUp);
     }
 
     private Worm getFirstWormInRange() {
+        Set<String> cells;
+        Set<String> cellsAdd;
+        int range = currentWorm.weapon.range;
 
-        Set<String> cells = constructFireDirectionLines(currentWorm.weapon.range)
+        cells = constructFireDirectionLines(range)
                 .stream()
                 .flatMap(Collection::stream)
                 .map(cell -> String.format("%d_%d", cell.x, cell.y))
                 .collect(Collectors.toSet());
-
+        
+        if (canSnowball()) {
+            range = currentWorm.snowballs.range;
+            cellsAdd = constructBananaSnowballDirectionLines(range)
+                .stream()
+                .flatMap(Collection::stream)
+                .map(cell -> String.format("%d_%d", cell.x, cell.y))
+                .collect(Collectors.toSet());
+            cells.addAll(cellsAdd);
+        }
+        else if (canBananaBombs()) {
+            range = currentWorm.bananaBombs.range;
+            cellsAdd = constructBananaSnowballDirectionLines(range)
+                .stream()
+                .flatMap(Collection::stream)
+                .map(cell -> String.format("%d_%d", cell.x, cell.y))
+                .collect(Collectors.toSet());
+            cells.addAll(cellsAdd);
+        }
+        
         Worm nearestWorm = getNearestWorm();
 
         for (Worm enemyWorm : opponent.worms) {
@@ -110,9 +98,7 @@ public class Bot {
                 }
 
                 Cell cell = gameState.map[coordinateY][coordinateX];
-                // if (cell.type != CellType.AIR) {
-                //     break;
-                // }
+                
                 if (currentWorm.id == 2 && currentWorm.bananaBombs.count == 0 && cell.type == CellType.DIRT) {
                     break;
                 }
@@ -122,9 +108,6 @@ public class Bot {
                 else if (currentWorm.id == 1 && cell.type == CellType.DIRT) {
                     break;
                 }
-                // if(currentWorm.id == 2 && currentWorm.bananaBombs.count == 0) break;
-                // else if (currentWorm.id == 3 && currentWorm.snowballs.count == 0) break;
-                // else if (cell.type != CellType.AIR) break;
 
                 directionLine.add(cell);
             }
@@ -132,6 +115,27 @@ public class Bot {
         }
 
         return directionLines;
+    }
+
+    private List<List<Cell>> constructBananaSnowballDirectionLines(int range) {
+        List<List<Cell>> theCells = new ArrayList<>();
+        int currX = currentWorm.position.x;
+        int currY = currentWorm.position.y;
+
+        for (int i = currX-range; i <= currX+range; i++) {
+            List<Cell> theCell = new ArrayList<>();
+            for (int j = currY-range; j <= currY+range; j++) {
+                if (isValidCoordinate(i,j)) {
+                    Cell cell = gameState.map[i][j];
+                    if ((i!=currX || j!=currY) && euclideanDistance(currentWorm.position.x,currentWorm.position.y, cell.x, cell.y) <= 5) {
+                        theCell.add(cell);
+                    }
+                }
+            }     
+            theCells.add(theCell);
+        }
+
+        return theCells;
     }
 
     private List<Cell> getSurroundingCells(int x, int y) {
@@ -178,14 +182,12 @@ public class Bot {
         return Direction.valueOf(builder.toString());
     }
 
-    private boolean canSnowball(Worm enemyWorm) {
-        return (currentWorm.id == 3) && (currentWorm.snowballs.count > 0) && (enemyWorm.roundsUntilUnfrozen <= 1);
-        // masih liat bisa snowball atau sisa ngganya belom distance
+    private boolean canSnowball() {
+        return (currentWorm.id == 3) && (currentWorm.snowballs.count > 0);
     }
 
     private boolean canBananaBombs() {
         return (currentWorm.id == 2) && (currentWorm.bananaBombs.count > 0);
-        // masih liat bisa snowball atau sisa ngganya belom distance
     }
 
     private Worm getNearestWorm() {
@@ -202,5 +204,77 @@ public class Bot {
         }
 
         return nearestWorm;
+    }
+
+    private Command attackNearest(Worm enemyWorm) {
+        if (canSnowball()) return new SnowballCommand(enemyWorm.position.x, enemyWorm.position.y);
+        else if (canBananaBombs()) return new BananaBombCommand(enemyWorm.position.x, enemyWorm.position.y);
+        else {
+            Direction direction = resolveDirection(currentWorm.position, enemyWorm.position);
+            return new ShootCommand(direction);
+        }
+    }
+
+    private Command moveNearest(int x, int y) {
+        int moveX = currentWorm.position.x;
+        int moveY = currentWorm.position.y;
+        int subCurrX = x-currentWorm.position.x;
+        int subCurrY = y-currentWorm.position.y;
+
+        if (subCurrX > 0) moveX = moveX+1;
+        else if (subCurrX < 0) moveX = moveX-1;
+
+        if (subCurrY > 0) moveY = moveY+1;
+        else if (subCurrY < 0) moveY = moveY-1;
+
+        List<Cell> surroundingBlocks = getSurroundingCells(currentWorm.position.x, currentWorm.position.y);
+        for (Cell cell : surroundingBlocks) {
+            if (cell.x == moveX && cell.y == moveY) {
+                if (cell.type == CellType.DIRT) {
+                    return new DigCommand(moveX, moveY);
+                } else if (cell.type == CellType.AIR || cell.type == CellType.LAVA) {
+                    if(!(isOccupied(cell))) return new MoveCommand(moveX, moveY);
+                }
+                break;
+            }
+        }
+        
+        return new DoNothingCommand();
+    }
+    
+    private Cell getNearestPowerUp() {
+        int tempDistance, nearestDistance;
+        Cell nearestPowerUp = null;
+        nearestDistance = 999999;
+
+        for (int i = 0; i < gameState.mapSize; i++){
+            for (int j = 0; j < gameState.mapSize; j++) {
+                if (gameState.map[i][j].powerUp != null){
+                    tempDistance = euclideanDistance(gameState.map[i][j].x, gameState.map[i][j].y, currentWorm.position.x, currentWorm.position.y);
+                    if (tempDistance < nearestDistance){
+                        nearestDistance = tempDistance;
+                        nearestPowerUp = gameState.map[i][j];
+                    }
+                }
+            }
+        }
+
+        return nearestPowerUp;
+    }
+
+    private Command moveNearestEntity(Worm nearestWorm, Cell nearestPowerUp){
+        if (nearestPowerUp != null) {
+            boolean isWormNearest;
+            int nearestWormDistance = euclideanDistance(nearestWorm.position.x, nearestWorm.position.y, currentWorm.position.x, currentWorm.position.y);
+            int nearestPowerUpDistance = euclideanDistance(nearestPowerUp.x, nearestPowerUp.y, currentWorm.position.x, currentWorm.position.y);
+            isWormNearest = nearestWormDistance >= nearestPowerUpDistance;
+            if (isWormNearest) return moveNearest(nearestWorm.position.x, nearestWorm.position.y);
+            else return moveNearest(nearestPowerUp.x, nearestPowerUp.y);
+        }
+        return moveNearest(nearestWorm.position.x, nearestWorm.position.y);
+    }
+
+    private boolean isOccupied(Cell cell) {
+        return (cell.occupier != null);
     }
 }
