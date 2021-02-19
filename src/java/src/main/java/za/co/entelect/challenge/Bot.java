@@ -38,6 +38,7 @@ public class Bot {
         else return moveNearestEntity(nearestWorm, nearestPowerUp);
     }
 
+    //mendapatkan worm in range
     private Worm getFirstWormInRange() {
         Set<String> cells;
         Set<String> cellsAdd;
@@ -117,6 +118,7 @@ public class Bot {
         return directionLines;
     }
 
+    // counstruct line untuk banabombs dan snowball
     private List<List<Cell>> constructBananaSnowballDirectionLines(int range) {
         List<List<Cell>> theCells = new ArrayList<>();
         int currX = currentWorm.position.x;
@@ -138,6 +140,7 @@ public class Bot {
         return theCells;
     }
 
+    //mendapatkan cell disekitar currentworm
     private List<Cell> getSurroundingCells(int x, int y) {
         ArrayList<Cell> cells = new ArrayList<>();
         for (int i = x - 1; i <= x + 1; i++) {
@@ -152,10 +155,12 @@ public class Bot {
         return cells;
     }
 
+    //mendapatkan jarak antar titik
     private int euclideanDistance(int aX, int aY, int bX, int bY) {
         return (int) (Math.sqrt(Math.pow(aX - bX, 2) + Math.pow(aY - bY, 2)));
     }
 
+    //mengecek apakah suatu koordinat valid
     private boolean isValidCoordinate(int x, int y) {
         return x >= 0 && x < gameState.mapSize
                 && y >= 0 && y < gameState.mapSize;
@@ -182,14 +187,17 @@ public class Bot {
         return Direction.valueOf(builder.toString());
     }
 
+    //mengecek apakah currentworm bisa snowballs
     private boolean canSnowball() {
         return (currentWorm.id == 3) && (currentWorm.snowballs.count > 0);
     }
 
+    //mengecek apakah currentworm bisa banana bombs
     private boolean canBananaBombs() {
         return (currentWorm.id == 2) && (currentWorm.bananaBombs.count > 0);
     }
 
+    //mendapat worm terdekat dari currentworm
     private Worm getNearestWorm() {
         Worm nearestWorm = null;
         int nearestDistance, tempDistance;
@@ -206,6 +214,7 @@ public class Bot {
         return nearestWorm;
     }
 
+    //mengattack worm terdekat
     private Command attackNearest(Worm enemyWorm) {
         if (canSnowball()) return new SnowballCommand(enemyWorm.position.x, enemyWorm.position.y);
         else if (canBananaBombs()) return new BananaBombCommand(enemyWorm.position.x, enemyWorm.position.y);
@@ -215,6 +224,7 @@ public class Bot {
         }
     }
 
+    //gerak menuju x,y
     private Command moveNearest(int x, int y) {
         int moveX = currentWorm.position.x;
         int moveY = currentWorm.position.y;
@@ -242,6 +252,7 @@ public class Bot {
         return new DoNothingCommand();
     }
     
+    //mendapatkan powerup terdekat jika masih ada
     private Cell getNearestPowerUp() {
         int tempDistance, nearestDistance;
         Cell nearestPowerUp = null;
@@ -262,6 +273,7 @@ public class Bot {
         return nearestPowerUp;
     }
 
+    //gerak menuju entitas terdekat
     private Command moveNearestEntity(Worm nearestWorm, Cell nearestPowerUp){
         if (nearestPowerUp != null) {
             boolean isWormNearest;
@@ -274,6 +286,7 @@ public class Bot {
         return moveNearest(nearestWorm.position.x, nearestWorm.position.y);
     }
 
+    //mengecek apakah suatu cell occupied atau tidak
     private boolean isOccupied(Cell cell) {
         return (cell.occupier != null);
     }
