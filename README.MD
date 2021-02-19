@@ -9,6 +9,7 @@ Algoritma greedy yang digunakan pada program ini adalah greedy by nearest entity
 - NodeJS
 
 ## Cara Menggunakan Program
+Copy folder java dalam src ke dalam starter-pack/starter-bots lalu build 
 Copy file master-tanur-imba.jar pada lokasi lain kemudian sesuaikan pada file config.json pada starter-pack
 
 ## Author
